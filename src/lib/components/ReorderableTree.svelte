@@ -504,6 +504,8 @@
     @import "../styles/reorderable.scss";
 
     .reorderable-tree {
+        display: flex;
+        flex-direction: column;
         gap: 0.25rem;
     }
 

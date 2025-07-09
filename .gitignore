@@ -1,6 +1,10 @@
 node_modules
 .vscode
 .cursorrules
+make-backup.bat
+*.zip
+*.7z
+
 
 # Output
 .output
