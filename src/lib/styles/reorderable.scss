@@ -1,0 +1,209 @@
+// Common drag and drop styles for reorderable components
+
+// CSS custom properties for theming
+:root {
+    --reorderable-focus-color: #007acc;
+    --reorderable-focus-offset: 2px;
+    --reorderable-focus-radius: 3px;
+    --reorderable-drag-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    --reorderable-drag-opacity: 0.6;
+    --reorderable-drag-scale: 1.05;
+    --reorderable-keyboard-tip-bg: #016DB6;
+    --reorderable-keyboard-tip-color: white;
+    --reorderable-keyboard-tip-radius: 4px;
+    --reorderable-drop-indicator-color: #007acc;
+    --reorderable-drop-indicator-radius: 2px;
+    --reorderable-drop-child-bg: rgba(0, 122, 204, 0.2);
+}
+
+// Focus styles
+@mixin reorderable-focus {
+    outline: 2px solid var(--reorderable-focus-color);
+    outline-offset: var(--reorderable-focus-offset);
+    border-radius: var(--reorderable-focus-radius);
+}
+
+// Drag clone styles (applied globally)
+:global(.drag-clone) {
+    opacity: var(--reorderable-drag-opacity);
+    transform: scale(var(--reorderable-drag-scale));
+    box-shadow: var(--reorderable-drag-shadow);
+    border-radius: var(--reorderable-focus-radius);
+    cursor: grabbing;
+}
+
+// Keyboard tip styles
+.keyboard-tip {
+    position: absolute;
+    bottom: -1.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--reorderable-keyboard-tip-bg);
+    color: var(--reorderable-keyboard-tip-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--reorderable-keyboard-tip-radius);
+    font-size: 0.75rem;
+    z-index: 10;
+    white-space: nowrap;
+    pointer-events: none;
+    
+    // Animation for appearance
+    animation: fadeInUp 0.2s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(0.5rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+// Common item styles
+.reorderable-item-base {
+    position: relative;
+    cursor: grab;
+    outline: none;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+
+    &:focus {
+        @include reorderable-focus;
+    }
+
+    &.focused {
+        z-index: 1;
+    }
+
+    &:active {
+        cursor: grabbing;
+    }
+
+    // When item has a specific handle, don't show grab cursor on the whole item
+    &.has-handle {
+        cursor: auto;
+
+        &:active {
+            cursor: auto;
+        }
+    }
+
+    // Dragging state - hide the original item
+    &.dragging {
+        visibility: hidden;
+    }
+
+    // Animation state - reduce interaction during animations
+    &.animating {
+        pointer-events: none;
+    }
+}
+
+// Drop indicators for tree components
+.drop-indicator {
+    &.drop-above::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        left: var(--drop-line-padding, 0);
+        right: 0;
+        height: 10px;
+        background: var(--reorderable-drop-indicator-color);
+        border-radius: var(--reorderable-drop-indicator-radius);
+        z-index: 10;
+    }
+
+    &.drop-below::after {
+        content: '';
+        position: absolute;
+        bottom: -3px;
+        left: var(--drop-line-padding, 0);
+        right: 0;
+        height: 10px;
+        background: var(--reorderable-drop-indicator-color);
+        border-radius: var(--reorderable-drop-indicator-radius);
+        z-index: 10;
+    }
+
+    &.drop-child::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--reorderable-drop-child-bg);
+        border-radius: var(--reorderable-focus-radius);
+        pointer-events: none;
+        z-index: 1;
+    }
+}
+
+// Container styles
+.reorderable-container-base {
+    position: relative;
+
+    &.disabled {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    &.vertical {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    &.horizontal {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+
+// Responsive touch support
+@media (hover: none) and (pointer: coarse) {
+    .reorderable-item-base {
+        cursor: grab;
+
+        &:active {
+            cursor: grabbing;
+        }
+
+        &.has-handle {
+            cursor: auto;
+
+            &:active {
+                cursor: auto;
+            }
+        }
+    }
+}
+
+// Accessibility improvements
+@media (prefers-reduced-motion: reduce) {
+    .reorderable-item-base {
+        transition: none;
+    }
+    
+    .keyboard-tip {
+        animation: none;
+    }
+    
+    :global(.drag-clone) {
+        transform: none;
+    }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+    :root {
+        --reorderable-focus-color: ButtonText;
+        --reorderable-drop-indicator-color: ButtonText;
+        --reorderable-keyboard-tip-bg: ButtonFace;
+        --reorderable-keyboard-tip-color: ButtonText;
+    }
+} 
