@@ -1,4 +1,4 @@
-import ReordableList from "./components/ReordableList.svelte";
+import ReorderableList from "./components/ReorderableList.svelte";
 
-export { ReordableList };
+export { ReorderableList };
 

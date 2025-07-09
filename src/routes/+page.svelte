@@ -1,5 +1,5 @@
 <script lang="ts">
-    import ReordableList from '$lib/components/ReordableList.svelte';
+    import ReorderableList from '$lib/components/ReorderableList.svelte';
 
     // Simple string array example
     let simpleItems = $state(['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry']);
@@ -58,7 +58,7 @@
         <h2>1. Simple String List (Vertical)</h2>
         <p>Drag items to reorder them. Uses overlap-based swapping: the dragged item must cover at least 80% of another item's area to trigger a swap.</p>
 
-        <ReordableList
+        <ReorderableList
             items={simpleItems}
             getKey={(item) => item}
             onUpdate={handleSimpleUpdate}
@@ -70,14 +70,14 @@
                     <span class="item-text">{item}</span>
                 </div>
             {/snippet}
-        </ReordableList>
+        </ReorderableList>
     </section>
 
     <section class="demo-section">
         <h2>2. Todo List with Complex Objects</h2>
         <p>A more complex example with interactive elements inside draggable items.</p>
         
-        <ReordableList
+        <ReorderableList
             items={todoItems}
             getKey={(item) => item.id}
             onUpdate={handleTodoUpdate}
@@ -113,7 +113,7 @@
                     </div>
                 </div>
             {/snippet}
-        </ReordableList>
+        </ReorderableList>
     </section>
 
     <section class="demo-section">
@@ -122,7 +122,7 @@
 
 
         
-        <ReordableList
+        <ReorderableList
             items={horizontalItems}
             getKey={(item) => item}
             onUpdate={handleHorizontalUpdate}
@@ -133,7 +133,7 @@
                     {item}
                 </div>
             {/snippet}
-        </ReordableList>
+        </ReorderableList>
 
     </section>
 
@@ -142,7 +142,7 @@
         <h2>4. Disabled State</h2>
         <p>This list is disabled and cannot be reordered.</p>
         
-        <ReordableList
+        <ReorderableList
             items={['Item 1', 'Item 2', 'Item 3']}
             getKey={(item) => item}
             onUpdate={() => {}}
@@ -155,7 +155,7 @@
                     <span class="item-text">{item}</span>
                 </div>
             {/snippet}
-        </ReordableList>
+        </ReorderableList>
     </section>
 </div>
 

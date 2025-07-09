@@ -19,11 +19,11 @@ pnpm install svelte-reorderable-list
 
 ## Usage
 
-Here is a basic example of how to use the `ReordableList` component.
+Here is a basic example of how to use the `ReorderableList` component.
 
 ```svelte
 <script>
-    import ReordableList from 'svelte-reorderable-list';
+    import ReorderableList from 'svelte-reorderable-list';
 
     let items = [
         { id: '1', text: 'Item 1' },
@@ -45,7 +45,7 @@ Here is a basic example of how to use the `ReordableList` component.
     </div>
 {/snippet}
 
-<ReordableList
+<ReorderableList
     items={items}
     getKey={getKey}
     onUpdate={handleUpdate}
