@@ -346,7 +346,7 @@
 </div>
 
 <style lang="scss">
-    @import "../styles/reorderable.scss";
+    @use "../styles/reorderable.scss";
 
     .reorderable-container {
         gap: 0.5rem;

@@ -501,7 +501,7 @@
 </div>
 
 <style lang="scss">
-    @import "../styles/reorderable.scss";
+    @use "../styles/reorderable.scss";
 
     .reorderable-tree {
         display: flex;
