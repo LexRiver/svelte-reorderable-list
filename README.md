@@ -88,7 +88,7 @@ The components use CSS custom properties for theming. You can customize the appe
     /* Drag clone appearance */
     --reorderable-drag-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     --reorderable-drag-opacity: 0.6;
-    --reorderable-drag-scale: 1.05;
+    --reorderable-drag-scale: 1.02;
     
     /* Keyboard tip styling */
     --reorderable-keyboard-tip-bg: #016DB6;
@@ -130,7 +130,7 @@ The library also includes a `ReorderableTree` component for hierarchical data:
 
 ```svelte
 <script>
-    import { ReorderableTree } from 'svelte-reorderable-list';
+    import { ReorderableTree, type TreeNode } from 'svelte-reorderable-list';
 
     let treeNodes = [
         {
@@ -146,7 +146,7 @@ The library also includes a `ReorderableTree` component for hierarchical data:
                 { item: { id: '2-1', text: 'Child 2.1' } }
             ]
         }
-    ];
+    ] satisfies TreeNode<{ id: number; name: string; }>[]
 
     const getKey = (item) => item.id;
 

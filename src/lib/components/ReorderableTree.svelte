@@ -6,15 +6,6 @@
         children?: TreeNode<ItemType>[];
     }
 
-    export interface Props<ItemType> {
-        nodes: TreeNode<ItemType>[];
-        getKey: (item: ItemType) => string;
-        itemSnippet: Snippet<[ItemType, number]>;
-        onUpdate: (nodes: TreeNode<ItemType>[]) => void;
-        disabled?: boolean;
-        cssSelectorHandle?: string;
-        levelPadding?: string;
-    }
 </script>
 
 <script lang="ts" generics="ItemType">
@@ -35,6 +26,15 @@
 
     type Position = 'above' | 'below' | 'child';
     type DropTarget = { nodeId: string; position: Position };
+    interface Props<ItemType> {
+        nodes: TreeNode<ItemType>[];
+        getKey: (item: ItemType) => string;
+        itemSnippet: Snippet<[ItemType, number]>;
+        onUpdate: (nodes: TreeNode<ItemType>[]) => void;
+        disabled?: boolean;
+        cssSelectorHandle?: string;
+        levelPadding?: string;
+    }
 
     const props: Props<ItemType> = $props();
     const defaultLevelPadding = props.levelPadding || '20px';
