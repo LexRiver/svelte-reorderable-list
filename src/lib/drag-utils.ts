@@ -27,14 +27,23 @@ export function createDragClone(
     const clone = originalElement.cloneNode(true) as HTMLElement;
     clone.classList.add("drag-clone");
 
+    // Get the computed margin-left to preserve tree indentation
+    // const computedStyle = window.getComputedStyle(originalElement);
+    // const marginLeft = computedStyle.marginLeft;
+
     const x = clientX - offset.x;
     const y = clientY - offset.y;
+
+    // console.log("clone", "x,y", x, y, "offset", offset);
+    // console.log("marginLeft", marginLeft);
 
     clone.style.position = "fixed";
     clone.style.left = `${x}px`;
     clone.style.top = `${y}px`;
     clone.style.width = `${rect.width}px`;
     clone.style.height = `${rect.height}px`;
+    // clone.style.marginLeft = marginLeft; // Preserve the original margin-left
+    clone.style.margin = "0px";
     clone.style.pointerEvents = "none";
     clone.style.zIndex = "1000";
     clone.style.transition = "none";
