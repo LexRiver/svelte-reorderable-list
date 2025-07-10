@@ -29,7 +29,7 @@
     interface Props<ItemType> {
         nodes: TreeNode<ItemType>[];
         getKey: (item: ItemType) => string;
-        itemSnippet: Snippet<[ItemType, number]>;
+        item: Snippet<[ItemType, number]>;
         onUpdate: (nodes: TreeNode<ItemType>[]) => void;
         disabled?: boolean;
         cssSelectorHandle?: string;
@@ -489,7 +489,7 @@
             onfocus={() => handleFocus(nodeKey)}
             onblur={handleBlur}
         >
-            {@render props.itemSnippet(node.item, index)}
+            {@render props.item(node.item, index)}
             
             {#if dragState.focusedItemKey === nodeKey && dragState.isKeyboardUser}
                 <div class="keyboard-tip">

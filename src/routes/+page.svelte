@@ -194,7 +194,7 @@
             onUpdate={handleSimpleUpdate}
             direction="vertical"
         >
-            {#snippet itemSnippet(item, index)}
+            {#snippet item(item, index)}
                 <div class="simple-item">
                     <span class="item-index">{index + 1}.</span>
                     <span class="item-text">{item}</span>
@@ -214,7 +214,7 @@
             direction="vertical"
             cssSelectorHandle=".drag-handle"
         >
-            {#snippet itemSnippet(todo, index)}
+            {#snippet item(todo, index)}
                 <div class="todo-item" class:completed={todo.completed}>
                     <div class="drag-handle">
                         <svg width="20" height="20" viewBox="0 0 24 24">
@@ -258,7 +258,7 @@
             onUpdate={handleHorizontalUpdate}
             direction="horizontal"
         >
-            {#snippet itemSnippet(item, index)}
+            {#snippet item(item, index)}
                 <div class="emoji-item">
                     {item}
                 </div>
@@ -279,7 +279,7 @@
             direction="vertical"
             disabled={true}
         >
-            {#snippet itemSnippet(item, index)}
+            {#snippet item(item, index)}
                 <div class="simple-item disabled">
                     <span class="item-index">{index + 1}.</span>
                     <span class="item-text">{item}</span>
@@ -298,7 +298,7 @@
             onUpdate={handleCategoryUpdate}
             levelPadding="20px"
         >
-            {#snippet itemSnippet(category, index)}
+            {#snippet item(category, index)}
                 <div class="category-item">
                     <span class="category-name">{category.name}</span>
                 </div>
@@ -317,7 +317,7 @@
             levelPadding="25px"
             cssSelectorHandle=".drag-handle"
         >
-            {#snippet itemSnippet(project, index)}
+            {#snippet item(project, index)}
                 <div class="project-item">
                     <div class="drag-handle">
                         <svg width="16" height="16" viewBox="0 0 24 24">

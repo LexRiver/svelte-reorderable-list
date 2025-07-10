@@ -4,7 +4,7 @@
     export interface Props<ItemType> {
         items: ItemType[];
         getKey: (item: ItemType) => string;
-        itemSnippet: Snippet<[ItemType, number]>;
+        item: Snippet<[ItemType, number]>;
         onUpdate: (items: ItemType[]) => void;
         direction?: "horizontal" | "vertical";
         disabled?: boolean;
@@ -332,7 +332,7 @@
             onfocus={() => handleFocus(props.getKey(item))}
             onblur={handleBlur}
         >
-            {@render props.itemSnippet(item, index)}
+            {@render props.item(item, index)}
             {#if dragState.focusedItemKey === props.getKey(item) && dragState.isKeyboardUser}
                 <div class="keyboard-tip">
                     Ctrl + {props.direction === "vertical" ||
