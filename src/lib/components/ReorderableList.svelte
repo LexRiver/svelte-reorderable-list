@@ -348,18 +348,4 @@
 <style lang="scss">
     @use "../styles/reorderable.scss";
 
-    .reorderable-container {
-        gap: 0.5rem;
-
-        &.vertical {
-            gap: 0.25rem;
-        }
-
-        &.horizontal {
-            gap: 0.5rem;
-        }
-    }
-
-    // Additional specific styles for list items can be added here if needed
-    // All common styles are inherited from .reorderable-item-base
 </style>

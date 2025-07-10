@@ -144,6 +144,7 @@
 // Container styles
 .reorderable-container-base {
     position: relative;
+    display: flex;
 
     &.disabled {
         pointer-events: none;
@@ -151,13 +152,11 @@
     }
 
     &.vertical {
-        display: flex;
         flex-direction: column;
         gap: 0.25rem;
     }
 
     &.horizontal {
-        display: flex;
         flex-direction: row;
         flex-wrap: wrap;
         gap: 0.5rem;
