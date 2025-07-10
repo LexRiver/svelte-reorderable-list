@@ -145,6 +145,9 @@
 .reorderable-container-base {
     position: relative;
     display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
 
     &.disabled {
         pointer-events: none;
