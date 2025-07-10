@@ -39,7 +39,7 @@ Here is a basic example of how to use the `ReorderableList` component.
     }
 </script>
 
-{#snippet itemSnippet(item, index)}
+{#snippet item(item, index)}
     <div class="item">
         <span>{item.text}</span>
     </div>
@@ -49,7 +49,7 @@ Here is a basic example of how to use the `ReorderableList` component.
     items={items}
     getKey={getKey}
     onUpdate={handleUpdate}
-    itemSnippet={itemSnippet}
+    item={item}
 />
 
 <style>
@@ -68,7 +68,7 @@ Here is a basic example of how to use the `ReorderableList` component.
 | ------------------- | ------------------------------------------ | -------- | ----------- | ------------------------------------------------------------------------------------------------------- |
 | `items`             | `ItemType[]`                               | Yes      | `undefined` | The array of items to be displayed.                                                                     |
 | `getKey`            | `(item: ItemType) => string`               | Yes      | `undefined` | A function that returns a unique key for each item.                                                     |
-| `itemSnippet`       | `Snippet<[ItemType, number]>`              | Yes      | `undefined` | A Svelte 5 snippet for rendering each item. It receives the item and its index.                         |
+| `item`              | `Snippet<[ItemType, number]>`              | Yes      | `undefined` | A Svelte 5 snippet for rendering each item. It receives the item and its index.                         |
 | `onUpdate`          | `(items: ItemType[]) => void`              | Yes      | `undefined` | Callback function that is called with the new item order after a change.                                |
 | `direction`         | `"horizontal" \| "vertical"`               | No       | `"vertical"`  | The direction of the list.                                                                              |
 | `disabled`          | `boolean`                                  | No       | `false`     | When `true`, the reordering functionality is disabled.                                                  |
@@ -155,7 +155,7 @@ The library also includes a `ReorderableTree` component for hierarchical data:
     }
 </script>
 
-{#snippet itemSnippet(item, index)}
+{#snippet item(item, index)}
     <div class="tree-item">
         <span>{item.text}</span>
     </div>
@@ -165,7 +165,7 @@ The library also includes a `ReorderableTree` component for hierarchical data:
     nodes={treeNodes}
     getKey={getKey}
     onUpdate={handleTreeUpdate}
-    itemSnippet={itemSnippet}
+    item={item}
     levelPadding="20px"
 />
 ```
@@ -176,7 +176,7 @@ The library also includes a `ReorderableTree` component for hierarchical data:
 | ------------------- | ------------------------------------------ | -------- | ----------- | ------------------------------------------------------------------------------------------------------- |
 | `nodes`             | `TreeNode<ItemType>[]`                     | Yes      | `undefined` | The array of tree nodes to be displayed.                                                               |
 | `getKey`            | `(item: ItemType) => string`               | Yes      | `undefined` | A function that returns a unique key for each item.                                                     |
-| `itemSnippet`       | `Snippet<[ItemType, number]>`              | Yes      | `undefined` | A Svelte 5 snippet for rendering each item. It receives the item and its index.                         |
+| `item`              | `Snippet<[ItemType, number]>`              | Yes      | `undefined` | A Svelte 5 snippet for rendering each item. It receives the item and its index.                         |
 | `onUpdate`          | `(nodes: TreeNode<ItemType>[]) => void`    | Yes      | `undefined` | Callback function that is called with the new tree structure after a change.                           |
 | `disabled`          | `boolean`                                  | No       | `false`     | When `true`, the reordering functionality is disabled.                                                  |
 | `cssSelectorHandle` | `string`                                   | No       | `undefined` | A CSS selector for the drag handle. If not provided, the entire item is draggable.                      |
