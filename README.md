@@ -162,27 +162,29 @@ Use `Tab` key to focus element and then `Ctrl`+`Arrows` to move.
 
 ![Tree Keyboard Demo](https://raw.githubusercontent.com/LexRiver/svelte-reorderable-list/main/static/img/tree-keyboard.gif)
 
-The library also includes a `ReorderableTree` component for hierarchical data:
+The library also includes a `ReorderableTree` component for hierarchical data. It supports two input modes:
+
+### Tree Mode (Hierarchical Structure)
 
 ```svelte
 <script>
     import { ReorderableTree, type TreeNode } from 'svelte-reorderable-list';
 
-    let treeNodes:TreeNode<{ id: number; name: string; }>[] = [
+    let treeNodes: TreeNode<{ id: string; name: string; }>[] = [
         {
-            item: { id: '1', text: 'Parent 1' },
+            item: { id: '1', name: 'Parent 1' },
             children: [
-                { item: { id: '1-1', text: 'Child 1.1' } },
-                { item: { id: '1-2', text: 'Child 1.2' } }
+                { item: { id: '1-1', name: 'Child 1.1' } },
+                { item: { id: '1-2', name: 'Child 1.2' } }
             ]
         },
         {
-            item: { id: '2', text: 'Parent 2' },
+            item: { id: '2', name: 'Parent 2' },
             children: [
-                { item: { id: '2-1', text: 'Child 2.1' } }
+                { item: { id: '2-1', name: 'Child 2.1' } }
             ]
         }
-    ]
+    ];
 
     const getKey = (item) => item.id;
 
@@ -193,7 +195,7 @@ The library also includes a `ReorderableTree` component for hierarchical data:
 
 {#snippet item(item, index)}
     <div class="tree-item">
-        <span>{item.text}</span>
+        <span>{item.name}</span>
     </div>
 {/snippet}
 
@@ -206,17 +208,98 @@ The library also includes a `ReorderableTree` component for hierarchical data:
 />
 ```
 
+### Flat Mode (Parent-Child References)
+
+For easier data management, you can also use a flat structure where hierarchy is defined by `parentKey` references:
+
+```svelte
+<script>
+    import { ReorderableTree, type FlatTreeNode } from 'svelte-reorderable-list';
+
+    let flatNodes: FlatTreeNode<{ id: string; name: string; }>[] = [
+        { item: { id: '1', name: 'Parent 1' }, key: '1' },
+        { item: { id: '1-1', name: 'Child 1.1' }, key: '1-1', parentKey: '1' },
+        { item: { id: '1-2', name: 'Child 1.2' }, key: '1-2', parentKey: '1' },
+        { item: { id: '2', name: 'Parent 2' }, key: '2' },
+        { item: { id: '2-1', name: 'Child 2.1' }, key: '2-1', parentKey: '2' }
+    ];
+
+    function handleFlatTreeUpdate(updatedNodes) {
+        flatNodes = updatedNodes;
+    }
+</script>
+
+{#snippet item(item, index)}
+    <div class="tree-item">
+        <span>{item.name}</span>
+    </div>
+{/snippet}
+
+<ReorderableTree
+    flatItems={flatNodes}
+    onUpdate={handleFlatTreeUpdate}
+    item={item}
+    levelPadding="20px"
+/>
+```
+
 ### Tree Component Props
+
+The `ReorderableTree` component automatically detects the input mode based on the props provided.
+
+#### Tree Mode Props
 
 | Prop                | Type                                       | Required | Default     | Description                                                                                             |
 | ------------------- | ------------------------------------------ | -------- | ----------- | ------------------------------------------------------------------------------------------------------- |
 | `nodes`             | `TreeNode<ItemType>[]`                     | Yes      | `undefined` | The array of tree nodes to be displayed.                                                               |
 | `getKey`            | `(item: ItemType) => string`               | Yes      | `undefined` | A function that returns a unique key for each item.                                                     |
-| `item`              | `Snippet<[ItemType, number]>`              | Yes      | `undefined` | A Svelte 5 snippet for rendering each item. It receives the item and its index.                         |
 | `onUpdate`          | `(nodes: TreeNode<ItemType>[]) => void`    | Yes      | `undefined` | Callback function that is called with the new tree structure after a change.                           |
+
+#### Flat Mode Props  
+
+| Prop                | Type                                            | Required | Default     | Description                                                                                             |
+| ------------------- | ----------------------------------------------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------- |
+| `flatItems`         | `FlatTreeNode<ItemType>[]`                      | Yes      | `undefined` | The array of flat tree nodes with parentKey references.                                                |
+| `onUpdate`          | `(flatItems: FlatTreeNode<ItemType>[]) => void` | Yes      | `undefined` | Callback function that is called with the new flat structure after a change.                          |
+
+#### Common Props
+
+| Prop                | Type                                       | Required | Default     | Description                                                                                             |
+| ------------------- | ------------------------------------------ | -------- | ----------- | ------------------------------------------------------------------------------------------------------- |
+| `item`              | `Snippet<[ItemType, number]>`              | Yes      | `undefined` | A Svelte 5 snippet for rendering each item. It receives the item and its index.                         |
 | `disabled`          | `boolean`                                  | No       | `false`     | When `true`, the reordering functionality is disabled.                                                  |
 | `cssSelectorHandle` | `string`                                   | No       | `undefined` | A CSS selector for the drag handle. If not provided, the entire item is draggable.                      |
 | `levelPadding`      | `string`                                   | No       | `"20px"`    | CSS padding value for each nesting level.                                                              |
+
+#### Type Definitions
+
+```typescript
+interface TreeNode<ItemType> {
+    item: ItemType;
+    children?: TreeNode<ItemType>[];
+}
+
+interface FlatTreeNode<ItemType> {
+    item: ItemType;
+    key: string;
+    parentKey?: string;
+}
+```
+
+### Choosing Between Tree and Flat Mode
+
+#### Use Tree Mode When:
+- Your data is naturally hierarchical (e.g., file systems, nested categories)
+- You prefer working with nested object structures
+- You need to maintain the tree structure in your existing data model
+
+#### Use Flat Mode When:
+- Your data comes from a database with parent-child relationships
+- You need easier state management and updates
+- You want to avoid deep nesting complexity
+- You're working with dynamic hierarchies that change frequently
+
+Both modes provide identical functionality and user experience - the choice is purely about data structure preference.
 
 ### Tree Keyboard Navigation
 

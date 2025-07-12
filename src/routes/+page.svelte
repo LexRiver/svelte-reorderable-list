@@ -1,9 +1,9 @@
 <script lang="ts">
     import ReorderableList from '$lib/components/ReorderableList.svelte';
-    import ReorderableTree, { type TreeNode } from '$lib/components/ReorderableTree.svelte';
+    import ReorderableTree, { type FlatTreeNode, type TreeNode } from '$lib/components/ReorderableTree.svelte';
 
     // Simple string array example
-    let simpleItems = $state(['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry']);
+    let simpleItems = $state(['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry'/*, 'Apple'*/]);
 
     // Complex object example
     interface TodoItem {
@@ -46,7 +46,8 @@
                     item: { categoryId: '2', name: 'Apples' },
                     children: [
                         { item: { categoryId: '21', name: 'Red Apples' } },
-                        { item: { categoryId: '22', name: 'Green Apples' } }
+                        { item: { categoryId: '22', name: 'Green Apples' } },
+                        // { item: { categoryId: '22', name: 'Green Apples (duplicate check)' } }
                     ]
                 },
                 { 
@@ -131,6 +132,36 @@
         }
     ]);
 
+    // Flat tree mode example - same data as categories but in flat structure
+    let flatCategories = $state<FlatTreeNode<Category>[]>([
+        { item: { categoryId: '1', name: 'Fruits' }, key: '1' },
+        { item: { categoryId: '2', name: 'Apples' }, key: '2', parentKey: '1' },
+        { item: { categoryId: '21', name: 'Red Apples' }, key: '21', parentKey: '2' },
+        { item: { categoryId: '22', name: 'Green Apples' }, key: '22', parentKey: '2' },
+        { item: { categoryId: '3', name: 'Citrus' }, key: '3', parentKey: '1' },
+        { item: { categoryId: '31', name: 'Oranges' }, key: '31', parentKey: '3' },
+        { item: { categoryId: '32', name: 'Lemons' }, key: '32', parentKey: '3' },
+        { item: { categoryId: '33', name: 'Limes' }, key: '33', parentKey: '3' },
+        { item: { categoryId: '4', name: 'Berries' }, key: '4', parentKey: '1' },
+        { item: { categoryId: '5', name: 'Tropical Fruits' }, key: '5', parentKey: '1' },
+        { item: { categoryId: '6', name: 'Vegetables' }, key: '6' },
+        { item: { categoryId: '7', name: 'Leafy Greens' }, key: '7', parentKey: '6' },
+        { item: { categoryId: '71', name: 'Spinach' }, key: '71', parentKey: '7' },
+        { item: { categoryId: '72', name: 'Lettuce' }, key: '72', parentKey: '7' },
+        { item: { categoryId: '73', name: 'Kale' }, key: '73', parentKey: '7' },
+        { item: { categoryId: '8', name: 'Root Vegetables' }, key: '8', parentKey: '6' },
+        { item: { categoryId: '81', name: 'Carrots' }, key: '81', parentKey: '8' },
+        { item: { categoryId: '82', name: 'Potatoes' }, key: '82', parentKey: '8' },
+        { item: { categoryId: '83', name: 'Onions' }, key: '83', parentKey: '8' },
+        { item: { categoryId: '9', name: 'Bell Peppers' }, key: '9', parentKey: '6' },
+        { item: { categoryId: '10', name: 'Tomatoes' }, key: '10', parentKey: '6' },
+        { item: { categoryId: '11', name: 'Grains' }, key: '11' },
+        { item: { categoryId: '12', name: 'Rice' }, key: '12', parentKey: '11' },
+        { item: { categoryId: '13', name: 'Wheat' }, key: '13', parentKey: '11' },
+        { item: { categoryId: '14', name: 'Quinoa' }, key: '14', parentKey: '11' },
+        { item: { categoryId: '15', name: 'Oats' }, key: '15', parentKey: '11' }
+    ]);
+
     function handleSimpleUpdate(newItems: string[]) {
         simpleItems = newItems;
         console.log('Simple items updated:', newItems);
@@ -154,6 +185,11 @@
     function handleProjectUpdate(newProjects: TreeNode<Project>[]) {
         projects = newProjects;
         console.log('Projects updated:', newProjects);
+    }
+
+    function handleFlatCategoryUpdate(newFlatCategories: FlatTreeNode<Category>[]) {
+        flatCategories = newFlatCategories;
+        console.log('Flat categories updated:', newFlatCategories);
     }
 
     function toggleTodoCompleted(todo: TodoItem) {
@@ -346,6 +382,24 @@
             {/snippet}
         </ReorderableTree>
     </section>
+
+    <section class="demo-section">
+        <h2>ReorderableTree with Flat Data Structure</h2>
+        <p>Same hierarchy as above, but using flat data structure with parentKey references.</p>
+        
+        <ReorderableTree
+            flatItems={flatCategories}
+            onUpdate={handleFlatCategoryUpdate}
+            levelPadding="20px"
+        >
+            {#snippet item(category, index)}
+                <div class="category-item flat-mode">
+                    <span class="category-name">{category.name}</span>
+                    <span class="flat-indicator">Flat Mode</span>
+                </div>
+            {/snippet}
+        </ReorderableTree>
+    </section>
     
 </div>
 
@@ -518,6 +572,21 @@
 
     .category-name {
         font-weight: bold;
+    }
+
+    .category-item.flat-mode {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        
+        .flat-indicator {
+            font-size: 0.75rem;
+            color: #666;
+            background: #e3f2fd;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+        }
     }
 
     .project-item {

@@ -141,6 +141,21 @@
     }
 }
 
+// Error styles
+.reorderable-error {
+    background-color: #fee;
+    border: 1px solid #fcc;
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 12px;
+    color: #c33;
+    font-size: 14px;
+    
+    strong {
+        font-weight: 600;
+    }
+}
+
 // Container styles
 .reorderable-container-base {
     position: relative;
@@ -152,6 +167,7 @@
         pointer-events: none;
         opacity: 0.6;
     }
+
 
     &.vertical {
         flex-direction: column;

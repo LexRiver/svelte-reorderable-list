@@ -6,6 +6,14 @@
         children?: TreeNode<ItemType>[];
     }
 
+    export interface FlatTreeNode<ItemType> {
+        item: ItemType;
+        key: string;
+        parentKey?: string;
+    }
+
+    
+
 </script>
 
 <script lang="ts" generics="ItemType">
@@ -24,21 +32,131 @@
         updateDragClonePosition
     } from "../drag-utils.js";
 
+    interface InternalFlatItem<ItemType> {
+        node: TreeNode<ItemType>;
+        level: number;
+        index: number;
+        parentKey: string | null;
+        flatIndex: number;
+        originalKey?: string; // Used in flat mode to store the original key
+    }
+
     type Position = 'above' | 'below' | 'child';
     type DropTarget = { nodeId: string; position: Position };
-    interface Props<ItemType> {
+    
+    // Two possible input modes as union type
+    type TreeInputMode<ItemType> = {
         nodes: TreeNode<ItemType>[];
         getKey: (item: ItemType) => string;
-        item: Snippet<[ItemType, number]>;
         onUpdate: (nodes: TreeNode<ItemType>[]) => void;
+        flatItems?: never; // Ensure flatItems is not present in tree mode
+    } | {
+        flatItems: FlatTreeNode<ItemType>[];
+        onUpdate: (flatItems: FlatTreeNode<ItemType>[]) => void;
+        nodes?: never; // Ensure nodes is not present in flat mode
+        getKey?: never; // Ensure getKey is not present in flat mode
+    };
+
+    interface BaseProps<ItemType> {
+        item: Snippet<[ItemType, number]>;
         disabled?: boolean;
         cssSelectorHandle?: string;
         levelPadding?: string;
     }
 
+    type Props<ItemType> = BaseProps<ItemType> & TreeInputMode<ItemType>;
+
     const props: Props<ItemType> = $props();
     const defaultLevelPadding = props.levelPadding || '20px';
     const animationDuration = 100;
+
+    // Type guard to check if we're in flat mode
+    function isFlatMode(props: Props<ItemType>): props is BaseProps<ItemType> & { flatItems: FlatTreeNode<ItemType>[]; onUpdate: (flatItems: FlatTreeNode<ItemType>[]) => void; } {
+        return 'flatItems' in props;
+    }
+
+    // Helper function to get key from item depending on mode
+    function getItemKey(item: ItemType, flatItem?: InternalFlatItem<ItemType>): string {
+        if (isFlatMode(props)) {
+            // In flat mode, use the originalKey if available
+            if (flatItem && flatItem.originalKey) {
+                return flatItem.originalKey;
+            }
+            // Fallback: find by item reference
+            const foundFlatNode = props.flatItems.find(fn => fn.item === item);
+            if (foundFlatNode) {
+                return foundFlatNode.key;
+            }
+            throw new Error('Could not find key for item in flat mode');
+        }
+        return props.getKey(item);
+    }
+
+    // Helper function to calculate level from flat item
+    function calculateLevelFromParent(node: FlatTreeNode<ItemType>, allItems: FlatTreeNode<ItemType>[]): number {
+        let level = 0;
+        let currentParent = node.parentKey;
+        const visited = new Set<string>();
+        
+        while (currentParent && !visited.has(currentParent)) {
+            visited.add(currentParent);
+            level++;
+            const parent = allItems.find(item => item.key === currentParent);
+            currentParent = parent?.parentKey;
+        }
+        return level;
+    }
+
+    // Helper function to trigger update based on mode
+    function triggerUpdate(newFlatItems: InternalFlatItem<ItemType>[]) {
+        if (isFlatMode(props)) {
+            // Convert back to FlatTreeNode format
+            props.onUpdate(convertInternalItemsToFlatTree(newFlatItems));
+        } else {
+            // Tree mode - rebuild tree structure
+            props.onUpdate(convertInternalItemsToTree(newFlatItems));
+        }
+    }
+
+    function convertInternalItemsToFlatTree(internalItems: InternalFlatItem<ItemType>[]): FlatTreeNode<ItemType>[] {
+        return internalItems.map(item => ({
+                item: item.node.item,
+                key: item.originalKey || getItemKey(item.node.item, item),
+                parentKey: item.parentKey || undefined
+            }));
+    }
+
+    // Validate that all keys are unique across the entire tree before Svelte processes them
+    const validationError = $derived.by(() => {
+        let keys: string[] = [];
+        
+        if (isFlatMode(props)) {
+            // Flat mode validation
+            keys = props.flatItems.map(item => item.key);
+        } else {
+            // Tree mode validation
+            const allItems: ItemType[] = [];
+            
+            function collectAllItems(nodes: TreeNode<ItemType>[]) {
+                for (const node of nodes) {
+                    allItems.push(node.item);
+                    if (node.children) {
+                        collectAllItems(node.children);
+                    }
+                }
+            }
+            
+            collectAllItems(props.nodes);
+            keys = allItems.map(item => props.getKey(item));
+        }
+        
+        const uniqueKeys = new Set(keys);
+        if (keys.length !== uniqueKeys.size) {
+            const duplicates = keys.filter((key, index) => keys.indexOf(key) !== index);
+            return `Duplicate keys found: ${duplicates.join(', ')}`;
+        }
+        return null;
+    });
 
     let containerRef: HTMLElement | undefined;
     let itemRefs: Record<string, HTMLElement> = $state({});
@@ -63,15 +181,15 @@
     });
 
     // Flatten tree for easier manipulation
-    function flattenTree(nodes: TreeNode<ItemType>[], level = 0, parentKey: string | null = null): { node: TreeNode<ItemType>; level: number; index: number; parentKey: string | null; flatIndex: number }[] {
+    function convertTreeToInternalItems(nodes: TreeNode<ItemType>[], level = 0, parentKey: string | null = null): InternalFlatItem<ItemType>[] {
         let flatIndex = 0;
-        const result: { node: TreeNode<ItemType>; level: number; index: number; parentKey: string | null; flatIndex: number }[] = [];
+        const result: InternalFlatItem<ItemType>[] = [];
         
         function traverse(nodes: TreeNode<ItemType>[], level: number, parentKey: string | null) {
             nodes.forEach((node, index) => {
                 result.push({ node, level, index, parentKey, flatIndex: flatIndex++ });
                 if (node.children) {
-                    traverse(node.children, level + 1, props.getKey(node.item));
+                    traverse(node.children, level + 1, getItemKey(node.item));
                 }
             });
         }
@@ -81,18 +199,18 @@
     }
 
     // Rebuild tree from flat structure
-    function rebuildTreeFromFlat(flatItems: ReturnType<typeof flattenTree>): TreeNode<ItemType>[] {
+    function convertInternalItemsToTree(internalItems: InternalFlatItem<ItemType>[]): TreeNode<ItemType>[] {
         const nodeMap = new Map<string, TreeNode<ItemType>>();
         const rootNodes: TreeNode<ItemType>[] = [];
 
         // First pass: create all nodes
-        flatItems.forEach(({ node }) => {
-            nodeMap.set(props.getKey(node.item), { ...node, children: [] });
+        internalItems.forEach(({ node }) => {
+            nodeMap.set(getItemKey(node.item), { ...node, children: [] });
         });
 
         // Second pass: build hierarchy
-        flatItems.forEach(({ node, parentKey }) => {
-            const nodeKey = props.getKey(node.item);
+        internalItems.forEach(({ node, parentKey }) => {
+            const nodeKey = getItemKey(node.item);
             const newNode = nodeMap.get(nodeKey)!;
             if (parentKey && nodeMap.has(parentKey)) {
                 const parent = nodeMap.get(parentKey)!;
@@ -106,15 +224,30 @@
         return rootNodes;
     }
 
-    let flatItems = $state(flattenTree(props.nodes));
-
-    // Update flatItems when props.nodes changes
-    $effect(() => {
-        if (!isAnimating) {
-            flatItems = flattenTree(props.nodes);
+    // Convert input to internal flat structure
+    const internalItems = $derived.by((): InternalFlatItem<ItemType>[] => {
+        if (isFlatMode(props)) {
+            // Convert FlatTreeNode to internal format
+            return convertFlatTreeToInternalItems(props.flatItems);
+        } else {
+            // Tree mode - flatten the tree structure
+            return convertTreeToInternalItems(props.nodes);
         }
     });
 
+    function convertFlatTreeToInternalItems(flatItems: FlatTreeNode<ItemType>[]): InternalFlatItem<ItemType>[] {
+        return flatItems.map((flatNode, index) => {
+                const level = calculateLevelFromParent(flatNode, flatItems);
+                return {
+                    node: { item: flatNode.item, children: [] },
+                    level,
+                    index,
+                    parentKey: flatNode.parentKey || null,
+                    flatIndex: index,
+                    originalKey: flatNode.key // Store the original key for easy access
+                } satisfies InternalFlatItem<ItemType>;
+            });
+        }
     function updateDraggedElementPosition() {
         if (!dragState.isDragging || !dragState.dragClone) return;
         updateDragClonePosition(dragState.dragClone, dragState.currentPosition, dragState.draggedElementOffset);
@@ -125,8 +258,8 @@
         
         const handleCenter = getDragCloneCenter(dragState.dragClone);
         
-        for (const flatItem of flatItems) {
-            const nodeKey = props.getKey(flatItem.node.item);
+        for (const flatItem of internalItems) {
+            const nodeKey = getItemKey(flatItem.node.item);
             const itemElement = itemRefs[nodeKey];
             if (!itemElement) continue;
             
@@ -217,25 +350,26 @@
     function performMove(draggedId: string, target: DropTarget) {
         if (isAnimating || draggedId === target.nodeId) return;
 
-        const draggedIndex = flatItems.findIndex(item => props.getKey(item.node.item) === draggedId);
-        const targetIndex = flatItems.findIndex(item => props.getKey(item.node.item) === target.nodeId);
+        const currentFlatItems = internalItems;
+        const draggedIndex = currentFlatItems.findIndex(item => getItemKey(item.node.item) === draggedId);
+        const targetIndex = currentFlatItems.findIndex(item => getItemKey(item.node.item) === target.nodeId);
         
         if (draggedIndex === -1 || targetIndex === -1) return;
 
-        const draggedItem = flatItems[draggedIndex];
-        const targetItem = flatItems[targetIndex];
+        const draggedItem = currentFlatItems[draggedIndex];
+        const targetItem = currentFlatItems[targetIndex];
         
         // Remove dragged item and its children
-        const draggedWithChildren = flatItems.filter(item => 
-            props.getKey(item.node.item) === draggedId || isDescendant(props.getKey(item.node.item), draggedId)
+        const draggedWithChildren = currentFlatItems.filter(item => 
+            getItemKey(item.node.item) === draggedId || isDescendant(getItemKey(item.node.item), draggedId, currentFlatItems)
         );
         
-        const newFlatItems = flatItems.filter(item => 
-            !draggedWithChildren.some(d => props.getKey(d.node.item) === props.getKey(item.node.item))
+        const newFlatItems = currentFlatItems.filter(item => 
+            !draggedWithChildren.some(d => getItemKey(d.node.item) === getItemKey(item.node.item))
         );
 
         // Calculate new position and level
-        let insertIndex = newFlatItems.findIndex(item => props.getKey(item.node.item) === target.nodeId);
+        let insertIndex = newFlatItems.findIndex(item => getItemKey(item.node.item) === target.nodeId);
         let newLevel = draggedItem.level;
         let newParentKey = draggedItem.parentKey;
 
@@ -245,9 +379,9 @@
             newParentKey = targetItem.parentKey;
         } else if (target.position === 'below') {
             // Insert after target's entire subtree at same level as target
-            const targetKey = props.getKey(targetItem.node.item);
+            const targetKey = getItemKey(targetItem.node.item);
             const targetWithChildren = newFlatItems.filter(item => 
-                props.getKey(item.node.item) === targetKey || isDescendant(props.getKey(item.node.item), targetKey)
+                getItemKey(item.node.item) === targetKey || isDescendant(getItemKey(item.node.item), targetKey, newFlatItems)
             );
             insertIndex = insertIndex + targetWithChildren.length;
             newLevel = targetItem.level;
@@ -263,7 +397,7 @@
         const levelDiff = newLevel - draggedItem.level;
         draggedWithChildren.forEach(item => {
             item.level += levelDiff;
-            if (props.getKey(item.node.item) === draggedId) {
+            if (getItemKey(item.node.item) === draggedId) {
                 item.parentKey = newParentKey;
             }
         });
@@ -271,20 +405,19 @@
         // Insert at new position
         newFlatItems.splice(insertIndex, 0, ...draggedWithChildren);
 
-        // Update flatItems directly to trigger reactivity and animations
+        // Update the tree structure and trigger reactivity
         isAnimating = true;
-        flatItems = newFlatItems;
-        props.onUpdate(rebuildTreeFromFlat(flatItems));
+        triggerUpdate(newFlatItems);
         setTimeout(() => (isAnimating = false), animationDuration);
     }
 
-    function isDescendant(nodeKey: string, ancestorKey: string): boolean {
+    function isDescendant(nodeKey: string, ancestorKey: string, searchFlatItems: InternalFlatItem<ItemType>[] = internalItems): boolean {
         let currentKey: string | null = nodeKey;
         const visited = new Set<string>();
         
         while (currentKey && !visited.has(currentKey)) {
             visited.add(currentKey);
-            const item = flatItems.find(item => props.getKey(item.node.item) === currentKey);
+            const item = searchFlatItems.find(item => getItemKey(item.node.item, item) === currentKey);
             if (!item || !item.parentKey) return false;
             if (item.parentKey === ancestorKey) return true;
             currentKey = item.parentKey;
@@ -303,10 +436,10 @@
         const itemKey = getItemKeyFromElement(itemElement);
         if (!itemKey) return;
 
-        const currentIndex = flatItems.findIndex(item => props.getKey(item.node.item) === itemKey);
+        const currentIndex = internalItems.findIndex(item => getItemKey(item.node.item) === itemKey);
         if (currentIndex === -1) return;
 
-        const currentItem = flatItems[currentIndex];
+        const currentItem = internalItems[currentIndex];
 
         if (event.key === "ArrowUp" && event.ctrlKey) {
             event.preventDefault();
@@ -314,11 +447,11 @@
             // Find the previous sibling at the same level
             let targetIndex = -1;
             for (let i = currentIndex - 1; i >= 0; i--) {
-                if (flatItems[i].level === currentItem.level) {
+                if (internalItems[i].level === currentItem.level) {
                     // Found a sibling - place above it
                     targetIndex = i;
                     break;
-                } else if (flatItems[i].level < currentItem.level) {
+                } else if (internalItems[i].level < currentItem.level) {
                     // Reached a higher level, can't move up
                     break;
                 }
@@ -331,8 +464,8 @@
             event.preventDefault();
             
             // Get all items that are part of this subtree (including children)
-            const itemWithChildren = flatItems.filter(item => 
-                props.getKey(item.node.item) === itemKey || isDescendant(props.getKey(item.node.item), itemKey)
+            const itemWithChildren = internalItems.filter(item => 
+                getItemKey(item.node.item) === itemKey || isDescendant(getItemKey(item.node.item), itemKey)
             );
             
             // Find the next sibling at the same level after this subtree
@@ -340,12 +473,12 @@
             const afterSubtreeIndex = currentIndex + itemWithChildren.length;
             
             // Look for the next item at the same level as the current item
-            for (let i = afterSubtreeIndex; i < flatItems.length; i++) {
-                if (flatItems[i].level === currentItem.level) {
+            for (let i = afterSubtreeIndex; i < internalItems.length; i++) {
+                if (internalItems[i].level === currentItem.level) {
                     // Found the next sibling
                     targetSiblingIndex = i;
                     break;
-                } else if (flatItems[i].level < currentItem.level) {
+                } else if (internalItems[i].level < currentItem.level) {
                     // Reached a higher level, can't move down
                     break;
                 }
@@ -360,7 +493,7 @@
             
             // Make this item a child of the previous item
             if (currentIndex > 0) {
-                const previousItem = flatItems[currentIndex - 1];
+                const previousItem = internalItems[currentIndex - 1];
                 performKeyboardMove(itemKey, currentIndex - 1, 'child');
             }
         } else if (event.key === "ArrowLeft" && event.ctrlKey) {
@@ -368,7 +501,7 @@
             
             // Move this item up one level (make it sibling of its parent)
             if (currentItem.level > 0 && currentItem.parentKey) {
-                const parentIndex = flatItems.findIndex(item => props.getKey(item.node.item) === currentItem.parentKey);
+                const parentIndex = internalItems.findIndex(item => getItemKey(item.node.item) === currentItem.parentKey);
                 if (parentIndex !== -1) {
                     performKeyboardMove(itemKey, parentIndex, 'below');
                 }
@@ -377,11 +510,11 @@
     }
 
     function performKeyboardMove(draggedId: string, targetIndex: number, position: Position) {
-        const targetItem = flatItems[targetIndex];
+        const targetItem = internalItems[targetIndex];
         if (!targetItem) return;
 
         const target = {
-            nodeId: props.getKey(targetItem.node.item),
+            nodeId: getItemKey(targetItem.node.item),
             position: position as Position
         };
 
@@ -457,39 +590,45 @@
     }
 </script>
 
+{#if validationError}
+    <div class="reorderable-error" role="alert">
+        <strong>Error:</strong> {validationError}
+    </div>
+
+{:else}
 <div
     class="reorderable-tree reorderable-container-base"
     class:disabled={props.disabled}
     bind:this={containerRef}
     role="tree"
 >
-    {#each flatItems as { node, level }, index (props.getKey(node.item))}
-        {@const nodeKey = props.getKey(node.item)}
+    {#each internalItems as flatItem, index (getItemKey(flatItem.node.item, flatItem))}
+        {@const nodeKey = getItemKey(flatItem.node.item, flatItem)}
         <div
             animate:flip={{ duration: animationDuration }}
             class="tree-item reorderable-item-base drop-indicator"
             class:focused={dragState.focusedItemKey === nodeKey}
             class:dragging={dragState.isDragging && (nodeKey === dragState.draggedItemKey || (dragState.draggedItemKey && isDescendant(nodeKey, dragState.draggedItemKey)))}
-            class:drop-above={dropTarget?.nodeId === nodeKey && dropTarget.position === 'above'}
-            class:drop-below={dropTarget?.nodeId === nodeKey && dropTarget.position === 'below'}
-            class:drop-child={dropTarget?.nodeId === nodeKey && dropTarget.position === 'child'}
+            class:drop-above={dropTarget?.nodeId === nodeKey && dropTarget?.position === 'above'}
+            class:drop-below={dropTarget?.nodeId === nodeKey && dropTarget?.position === 'below'}
+            class:drop-child={dropTarget?.nodeId === nodeKey && dropTarget?.position === 'child'}
             class:has-handle={!!props.cssSelectorHandle}
             class:animating={isAnimating}
             data-tree-item
             data-item-key={nodeKey}
             role="treeitem"
-            aria-expanded={node.children && node.children.length > 0 ? "true" : "false"}
+            aria-expanded={flatItem.node.children && flatItem.node.children.length > 0 ? "true" : "false"}
             aria-selected={dragState.focusedItemKey === nodeKey}
             bind:this={itemRefs[nodeKey]}
             tabindex={props.disabled ? -1 : 0}
-            style={`margin-left: calc(${defaultLevelPadding} * ${level}); --drop-line-padding: 0; --cursor-grab: ${props.cssSelectorHandle ? 'default' : 'grab'}; --cursor-grabbing: ${props.cssSelectorHandle ? 'default' : 'grabbing'}`}
+            style={`margin-left: calc(${defaultLevelPadding} * ${flatItem.level}); --drop-line-padding: 0; --cursor-grab: ${props.cssSelectorHandle ? 'default' : 'grab'}; --cursor-grabbing: ${props.cssSelectorHandle ? 'default' : 'grabbing'}`}
             onmousedown={handleMouseDown}
             ontouchstart={handleTouchStart}
             onkeydown={handleKeyDown}
             onfocus={() => handleFocus(nodeKey)}
             onblur={handleBlur}
         >
-            {@render props.item(node.item, index)}
+            {@render props.item(flatItem.node.item, index)}
             
             {#if dragState.focusedItemKey === nodeKey && dragState.isKeyboardUser}
                 <div class="keyboard-tip">
@@ -499,6 +638,7 @@
         </div>
     {/each}
 </div>
+{/if}
 
 <style lang="scss">
     @use "../styles/reorderable.scss";

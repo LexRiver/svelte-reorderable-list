@@ -31,6 +31,18 @@
 
     const props: Props<ItemType> = $props();
 
+    // Validate that all keys are unique before Svelte processes them
+    const validationError = $derived.by(() => {
+        const keys = props.items.map(item => props.getKey(item));
+        const uniqueKeys = new Set(keys);
+        if (keys.length !== uniqueKeys.size) {
+            const duplicates = keys.filter((key, index) => keys.indexOf(key) !== index);
+            return `Duplicate keys found: ${duplicates.join(', ')}`;
+        }
+        return null;
+    });
+
+
     let containerRef: HTMLElement|undefined;
     let itemRefs: Record<string, HTMLElement> = $state({});
 
@@ -55,6 +67,13 @@
 
     const mainState = $state({
         items: props.items,
+    });
+
+    // Keep mainState.items in sync with validatedItems when not animating
+    $effect(() => {
+        if (!isAnimating) {
+            mainState.items = props.items;
+        }
     });
 
     function updateDraggedElementPosition() {
@@ -300,6 +319,12 @@
     }
 </script>
 
+{#if validationError}
+    <div class="reorderable-error" role="alert">
+        <strong>Error:</strong> {validationError}
+    </div>
+{:else}
+
 <div
     class="reorderable-container reorderable-container-base"
     class:vertical={props.direction === "vertical"}
@@ -344,6 +369,7 @@
         </div>
     {/each}
 </div>
+{/if}
 
 <style lang="scss">
     @use "../styles/reorderable.scss";
