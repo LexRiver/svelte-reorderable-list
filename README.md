@@ -51,12 +51,14 @@ Here is a basic example of how to use the `ReorderableList` component.
 <script>
     import ReorderableList from 'svelte-reorderable-list';
 
+
     let items = [
         { id: '1', text: 'Item 1' },
         { id: '2', text: 'Item 2' },
         { id: '3', text: 'Item 3' },
         { id: '4', text: 'Item 4' },
     ];
+    // or items = $state([...])
 
     const getKey = (item) => item.id;
 
@@ -83,7 +85,6 @@ Here is a basic example of how to use the `ReorderableList` component.
         padding: 1rem;
         border: 1px solid #ccc;
         background-color: #f9f9f9;
-        margin-bottom: 0.5rem;
     }
 </style>
 ```

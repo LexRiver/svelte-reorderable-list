@@ -1,6 +1,6 @@
 {
 	"name": "svelte-reorderable-list",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && pnpm run prepack",
@@ -48,9 +48,31 @@
 	},
 	"keywords": [
 		"svelte",
+		"sveltekit",
+		"svelte5",
 		"reorderable",
 		"list",
-		"sortable"
+		"sortable",
+		"tree",
+		"nested",
+		"hierarchical",
+		"drag",
+		"drop",
+		"drag-and-drop",
+		"dnd",
+		"component",
+		"ui",
+		"components",
+		"library",
+		"typescript",
+		"accessible",
+		"keyboard",
+		"a11y",
+		"touch",
+		"mobile",
+		"ordering",
+		"rearrange",
+		"move"
 	],
 	"pnpm": {
 		"onlyBuiltDependencies": [
