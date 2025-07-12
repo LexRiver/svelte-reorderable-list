@@ -186,7 +186,7 @@
     
     <section class="demo-section">
         <h2>Simple String List</h2>
-        <p>Drag items to reorder them. Uses overlap-based swapping: the dragged item must cover at least 80% of another item's area to trigger a swap.</p>
+        <p>Drag items to reorder them.</p>
 
         <ReorderableList
             items={simpleItems}
@@ -205,7 +205,7 @@
 
     <section class="demo-section">
         <h2>Todo List with Complex Objects</h2>
-        <p>A more complex example with interactive elements inside draggable items.</p>
+        <p>Use a handle to drag items on the left.</p>
         
         <ReorderableList
             items={todoItems}

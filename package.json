@@ -1,6 +1,6 @@
 {
 	"name": "svelte-reorderable-list",
-	"version": "0.1.7",
+	"version": "0.1.8",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && pnpm run prepack",

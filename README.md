@@ -17,6 +17,32 @@ A simple and accessible reorderable list component for Svelte 5.
 pnpm install svelte-reorderable-list
 ```
 
+## Demo
+
+### Basic List Reordering
+
+![Simple List Demo](static/img/simple-list.gif)
+
+### Horizontal Layout
+
+![Horizontal Layout Demo](static/img/horizontal-layout.gif)
+
+### Custom Drag Handle
+
+![Drag Handle Demo](static/img/drag-handle.gif)
+
+### Keyboard Navigation
+
+Use `Tab` key to focus element and then `Ctrl`+`Arrows` to move.
+
+**Vertical Lists:**
+
+![Keyboard Vertical Demo](static/img/keyboard-vertical.gif)
+
+**Horizontal Lists:**
+
+![Keyboard Horizontal Demo](static/img/keyboard-horizontal.gif)
+
 ## Usage
 
 Here is a basic example of how to use the `ReorderableList` component.
@@ -126,13 +152,23 @@ The components use CSS custom properties for theming. You can customize the appe
 
 ## Tree Component
 
+### Tree Demo
+
+![Tree Demo](static/img/tree.gif)
+
+### Tree Keyboard Navigation
+
+Use `Tab` key to focus element and then `Ctrl`+`Arrows` to move.
+
+![Tree Keyboard Demo](static/img/tree-keyboard.gif)
+
 The library also includes a `ReorderableTree` component for hierarchical data:
 
 ```svelte
 <script>
     import { ReorderableTree, type TreeNode } from 'svelte-reorderable-list';
 
-    let treeNodes = [
+    let treeNodes:TreeNode<{ id: number; name: string; }>[] = [
         {
             item: { id: '1', text: 'Parent 1' },
             children: [
@@ -146,7 +182,7 @@ The library also includes a `ReorderableTree` component for hierarchical data:
                 { item: { id: '2-1', text: 'Child 2.1' } }
             ]
         }
-    ] satisfies TreeNode<{ id: number; name: string; }>[]
+    ]
 
     const getKey = (item) => item.id;
 
