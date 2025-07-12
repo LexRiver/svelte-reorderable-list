@@ -21,15 +21,15 @@ pnpm install svelte-reorderable-list
 
 ### Basic List Reordering
 
-![Simple List Demo](static/img/simple-list.gif)
+![Simple List Demo](https://raw.githubusercontent.com/LexRiver/svelte-reorderable-list/main/static/img/simple-list.gif)
 
 ### Horizontal Layout
 
-![Horizontal Layout Demo](static/img/horizontal-layout.gif)
+![Horizontal Layout Demo](https://raw.githubusercontent.com/LexRiver/svelte-reorderable-list/main/static/img/horizontal-layout.gif)
 
 ### Custom Drag Handle
 
-![Drag Handle Demo](static/img/drag-handle.gif)
+![Drag Handle Demo](https://raw.githubusercontent.com/LexRiver/svelte-reorderable-list/main/static/img/drag-handle.gif)
 
 ### Keyboard Navigation
 
@@ -37,11 +37,11 @@ Use `Tab` key to focus element and then `Ctrl`+`Arrows` to move.
 
 **Vertical Lists:**
 
-![Keyboard Vertical Demo](static/img/keyboard-vertical.gif)
+![Keyboard Vertical Demo](https://raw.githubusercontent.com/LexRiver/svelte-reorderable-list/main/static/img/keyboard-vertical.gif)
 
 **Horizontal Lists:**
 
-![Keyboard Horizontal Demo](static/img/keyboard-horizontal.gif)
+![Keyboard Horizontal Demo](https://raw.githubusercontent.com/LexRiver/svelte-reorderable-list/main/static/img/keyboard-horizontal.gif)
 
 ## Usage
 
@@ -154,13 +154,13 @@ The components use CSS custom properties for theming. You can customize the appe
 
 ### Tree Demo
 
-![Tree Demo](static/img/tree.gif)
+![Tree Demo](https://raw.githubusercontent.com/LexRiver/svelte-reorderable-list/main/static/img/tree.gif)
 
 ### Tree Keyboard Navigation
 
 Use `Tab` key to focus element and then `Ctrl`+`Arrows` to move.
 
-![Tree Keyboard Demo](static/img/tree-keyboard.gif)
+![Tree Keyboard Demo](https://raw.githubusercontent.com/LexRiver/svelte-reorderable-list/main/static/img/tree-keyboard.gif)
 
 The library also includes a `ReorderableTree` component for hierarchical data:
 

@@ -1,6 +1,6 @@
 {
 	"name": "svelte-reorderable-list",
-	"version": "0.1.8",
+	"version": "0.1.9",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && pnpm run prepack",
@@ -57,5 +57,13 @@
 			"esbuild"
 		]
 	},
-	"license": "MIT"
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/LexRiver/svelte-reorderable-list.git"
+	},
+	"homepage": "https://github.com/LexRiver/svelte-reorderable-list",
+	"bugs": {
+		"url": "https://github.com/LexRiver/svelte-reorderable-list/issues"
+	}
 }
