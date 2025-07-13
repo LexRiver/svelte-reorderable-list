@@ -201,7 +201,7 @@ The library also includes a `ReorderableTree` component for hierarchical data. I
 {/snippet}
 
 <ReorderableTree
-    nodes={treeNodes}
+    treeNodes={treeNodes}
     getKey={getKey}
     onUpdate={handleTreeUpdate}
     item={item}
@@ -237,7 +237,7 @@ For easier data management, you can also use a flat structure where hierarchy is
 {/snippet}
 
 <ReorderableTree
-    flatItems={flatNodes}
+    flatNodes={flatNodes}
     onUpdate={handleFlatTreeUpdate}
     item={item}
     levelPadding="20px"
@@ -252,7 +252,7 @@ The `ReorderableTree` component automatically detects the input mode based on th
 
 | Prop                | Type                                       | Required | Default     | Description                                                                                             |
 | ------------------- | ------------------------------------------ | -------- | ----------- | ------------------------------------------------------------------------------------------------------- |
-| `nodes`             | `TreeNode<ItemType>[]`                     | Yes      | `undefined` | The array of tree nodes to be displayed.                                                               |
+| `treeNodes`         | `TreeNode<ItemType>[]`                     | Yes      | `undefined` | The array of tree nodes to be displayed.                                                               |
 | `getKey`            | `(item: ItemType) => string`               | Yes      | `undefined` | A function that returns a unique key for each item.                                                     |
 | `onUpdate`          | `(nodes: TreeNode<ItemType>[]) => void`    | Yes      | `undefined` | Callback function that is called with the new tree structure after a change.                           |
 
@@ -260,8 +260,8 @@ The `ReorderableTree` component automatically detects the input mode based on th
 
 | Prop                | Type                                            | Required | Default     | Description                                                                                             |
 | ------------------- | ----------------------------------------------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------- |
-| `flatItems`         | `FlatTreeNode<ItemType>[]`                      | Yes      | `undefined` | The array of flat tree nodes with parentKey references.                                                |
-| `onUpdate`          | `(flatItems: FlatTreeNode<ItemType>[]) => void` | Yes      | `undefined` | Callback function that is called with the new flat structure after a change.                          |
+| `flatNodes`         | `FlatTreeNode<ItemType>[]`                      | Yes      | `undefined` | The array of flat tree nodes with parentKey references.                                                |
+| `onUpdate`          | `(flatNodes: FlatTreeNode<ItemType>[]) => void` | Yes      | `undefined` | Callback function that is called with the new flat structure after a change.                          |
 
 #### Common Props
 

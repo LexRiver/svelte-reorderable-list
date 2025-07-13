@@ -329,7 +329,7 @@
         <p>Drag items to reorder or nest them under other categories.</p>
         
         <ReorderableTree
-            nodes={categories}
+            treeNodes={categories}
             getKey={(item) => item.categoryId}
             onUpdate={handleCategoryUpdate}
             levelPadding="20px"
@@ -347,7 +347,7 @@
         <p>A project hierarchy with drag handles and status indicators.</p>
         
         <ReorderableTree
-            nodes={projects}
+            treeNodes={projects}
             getKey={(item) => item.projectId}
             onUpdate={handleProjectUpdate}
             levelPadding="25px"
@@ -388,7 +388,7 @@
         <p>Same hierarchy as above, but using flat data structure with parentKey references.</p>
         
         <ReorderableTree
-            flatItems={flatCategories}
+            flatNodes={flatCategories}
             onUpdate={handleFlatCategoryUpdate}
             levelPadding="20px"
         >

@@ -12,6 +12,41 @@
         parentKey?: string;
     }
 
+    type TreeInputMode<ItemType> = {
+        treeNodes: TreeNode<ItemType>[];
+        getKey: (item: ItemType) => string;
+        onUpdate: (nodes: TreeNode<ItemType>[]) => void;
+        flatNodes?: never; // Ensure flatItems is not present in tree mode
+    } | {
+        flatNodes: FlatTreeNode<ItemType>[];
+        onUpdate: (flatNodes: FlatTreeNode<ItemType>[]) => void;
+        treeNodes?: never; // Ensure treeNodes is not present in flat mode
+        getKey?: never; // Ensure getKey is not present in flat mode
+    };
+
+    interface BaseProps<ItemType> {
+        item: Snippet<[ItemType, number]>;
+        disabled?: boolean;
+        cssSelectorHandle?: string;
+        levelPadding?: string;
+    }
+
+    // Two possible input modes as union type
+    export type ReorderableTreeProps<ItemType> = BaseProps<ItemType> & TreeInputMode<ItemType>;
+
+    interface InternalFlatItem<ItemType> {
+        node: TreeNode<ItemType>;
+        level: number;
+        index: number;
+        parentKey: string | null;
+        flatIndex: number;
+        originalKey?: string; // Used in flat mode to store the original key
+    }
+
+    type Position = 'above' | 'below' | 'child';
+    type DropTarget = { nodeId: string; position: Position };
+
+
     
 
 </script>
@@ -32,47 +67,17 @@
         updateDragClonePosition
     } from "../drag-utils.js";
 
-    interface InternalFlatItem<ItemType> {
-        node: TreeNode<ItemType>;
-        level: number;
-        index: number;
-        parentKey: string | null;
-        flatIndex: number;
-        originalKey?: string; // Used in flat mode to store the original key
-    }
 
-    type Position = 'above' | 'below' | 'child';
-    type DropTarget = { nodeId: string; position: Position };
     
-    // Two possible input modes as union type
-    type TreeInputMode<ItemType> = {
-        nodes: TreeNode<ItemType>[];
-        getKey: (item: ItemType) => string;
-        onUpdate: (nodes: TreeNode<ItemType>[]) => void;
-        flatItems?: never; // Ensure flatItems is not present in tree mode
-    } | {
-        flatItems: FlatTreeNode<ItemType>[];
-        onUpdate: (flatItems: FlatTreeNode<ItemType>[]) => void;
-        nodes?: never; // Ensure nodes is not present in flat mode
-        getKey?: never; // Ensure getKey is not present in flat mode
-    };
+    
 
-    interface BaseProps<ItemType> {
-        item: Snippet<[ItemType, number]>;
-        disabled?: boolean;
-        cssSelectorHandle?: string;
-        levelPadding?: string;
-    }
-
-    type Props<ItemType> = BaseProps<ItemType> & TreeInputMode<ItemType>;
-
-    const props: Props<ItemType> = $props();
+    const props: ReorderableTreeProps<ItemType> = $props();
     const defaultLevelPadding = props.levelPadding || '20px';
     const animationDuration = 100;
 
     // Type guard to check if we're in flat mode
-    function isFlatMode(props: Props<ItemType>): props is BaseProps<ItemType> & { flatItems: FlatTreeNode<ItemType>[]; onUpdate: (flatItems: FlatTreeNode<ItemType>[]) => void; } {
-        return 'flatItems' in props;
+    function isFlatMode(props: ReorderableTreeProps<ItemType>): props is BaseProps<ItemType> & { flatNodes: FlatTreeNode<ItemType>[]; onUpdate: (flatNodes: FlatTreeNode<ItemType>[]) => void; } {
+        return 'flatNodes' in props;
     }
 
     // Helper function to get key from item depending on mode
@@ -83,7 +88,7 @@
                 return flatItem.originalKey;
             }
             // Fallback: find by item reference
-            const foundFlatNode = props.flatItems.find(fn => fn.item === item);
+            const foundFlatNode = props.flatNodes.find(fn => fn.item === item);
             if (foundFlatNode) {
                 return foundFlatNode.key;
             }
@@ -132,7 +137,7 @@
         
         if (isFlatMode(props)) {
             // Flat mode validation
-            keys = props.flatItems.map(item => item.key);
+            keys = props.flatNodes.map(item => item.key);
         } else {
             // Tree mode validation
             const allItems: ItemType[] = [];
@@ -146,7 +151,7 @@
                 }
             }
             
-            collectAllItems(props.nodes);
+            collectAllItems(props.treeNodes);
             keys = allItems.map(item => props.getKey(item));
         }
         
@@ -228,10 +233,10 @@
     const internalItems = $derived.by((): InternalFlatItem<ItemType>[] => {
         if (isFlatMode(props)) {
             // Convert FlatTreeNode to internal format
-            return convertFlatTreeToInternalItems(props.flatItems);
+            return convertFlatTreeToInternalItems(props.flatNodes);
         } else {
             // Tree mode - flatten the tree structure
-            return convertTreeToInternalItems(props.nodes);
+            return convertTreeToInternalItems(props.treeNodes);
         }
     });
 

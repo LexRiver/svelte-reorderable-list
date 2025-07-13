@@ -1,7 +1,9 @@
 <script module lang="ts">
     import type { Snippet } from "svelte";
 
-    export interface Props<ItemType> {
+    
+
+    export interface ReorderableListProps<ItemType> {
         items: ItemType[];
         getKey: (item: ItemType) => string;
         item: Snippet<[ItemType, number]>;
@@ -29,7 +31,7 @@
         updateDragClonePosition
     } from "../drag-utils.js";
 
-    const props: Props<ItemType> = $props();
+    const props: ReorderableListProps<ItemType> = $props();
 
     // Validate that all keys are unique before Svelte processes them
     const validationError = $derived.by(() => {
