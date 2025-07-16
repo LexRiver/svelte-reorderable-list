@@ -28,11 +28,11 @@
 			"svelte": "./dist/index.js"
 		},
 		"./components/ReorderableList.svelte": {
-			"types": "./dist/components/ReorderableList.d.ts",
+			"types": "./dist/components/ReorderableList.svelte.d.ts",
 			"svelte": "./dist/components/ReorderableList.svelte"
 		},
 		"./components/ReorderableTree.svelte": {
-			"types": "./dist/components/ReorderableTree.d.ts",
+			"types": "./dist/components/ReorderableTree.svelte.d.ts",
 			"svelte": "./dist/components/ReorderableTree.svelte"
 		},
 		"./reset.css": "./dist/styles/reset.css"
