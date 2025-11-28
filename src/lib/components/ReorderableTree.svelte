@@ -241,18 +241,31 @@
     });
 
     function convertFlatTreeToInternalItems(flatItems: FlatTreeNode<ItemType>[]): InternalFlatItem<ItemType>[] {
-        return flatItems.map((flatNode, index) => {
-                const level = calculateLevelFromParent(flatNode, flatItems);
-                return {
-                    node: { item: flatNode.item, children: [] },
-                    level,
-                    index,
-                    parentKey: flatNode.parentKey || null,
-                    flatIndex: index,
-                    originalKey: flatNode.key // Store the original key for easy access
-                } satisfies InternalFlatItem<ItemType>;
-            });
-        }
+        const existingKeys = new Set(flatItems.map((item) => item.key));
+        const internal: InternalFlatItem<ItemType>[] = [];
+
+        flatItems.forEach((flatNode, index) => {
+            if (flatNode.parentKey && !existingKeys.has(flatNode.parentKey)) {
+                console.error(
+                    `ReorderableTree: parentKey "${flatNode.parentKey}" not found for item with key "${flatNode.key}". Item will be skipped.`,
+                );
+                return; // Skip rendering this item
+            }
+
+            const level = calculateLevelFromParent(flatNode, flatItems);
+
+            internal.push({
+                node: { item: flatNode.item, children: [] },
+                level,
+                index,
+                parentKey: flatNode.parentKey || null,
+                flatIndex: index,
+                originalKey: flatNode.key, // Store the original key for easy access
+            } satisfies InternalFlatItem<ItemType>);
+        });
+
+        return internal;
+    }
     function updateDraggedElementPosition() {
         if (!dragState.isDragging || !dragState.dragClone) return;
         updateDragClonePosition(dragState.dragClone, dragState.currentPosition, dragState.draggedElementOffset);

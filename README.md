@@ -211,7 +211,9 @@ The library also includes a `ReorderableTree` component for hierarchical data. I
 
 ### Flat Mode (Parent-Child References)
 
-For easier data management, you can also use a flat structure where hierarchy is defined by `parentKey` references:
+For easier data management, you can also use a flat structure where hierarchy is defined by `parentKey` references. If a node's `parentKey` does not match any existing `key`, the library logs a `console.error` and skips rendering that item:
+
+
 
 ```svelte
 <script>
