@@ -240,29 +240,104 @@
         }
     });
 
+    // Derived index maps for efficient lookups on internalItems
+    const internalIndexMaps = $derived.by(() => {
+        const keyToIndex = new Map<string, number>();
+        const keyToParent = new Map<string, string | null>();
+
+        internalItems.forEach((item, index) => {
+            const key = getItemKey(item.node.item, item);
+            keyToIndex.set(key, index);
+            keyToParent.set(key, item.parentKey);
+        });
+
+        return { keyToIndex, keyToParent };
+    });
+
     function convertFlatTreeToInternalItems(flatItems: FlatTreeNode<ItemType>[]): InternalFlatItem<ItemType>[] {
-        const existingKeys = new Set(flatItems.map((item) => item.key));
+        const keyToNode = new Map(flatItems.map((item) => [item.key, item] as const));
+        const validityCache = new Map<string, boolean>();
         const internal: InternalFlatItem<ItemType>[] = [];
 
-        flatItems.forEach((flatNode, index) => {
-            if (flatNode.parentKey && !existingKeys.has(flatNode.parentKey)) {
-                console.error(
-                    `ReorderableTree: parentKey "${flatNode.parentKey}" not found for item with key "${flatNode.key}". Item will be skipped.`,
-                );
-                return; // Skip rendering this item
+        // Build parent → children map (preserving original order within siblings)
+        const childrenByParent = new Map<string | null, FlatTreeNode<ItemType>[]>();
+        
+        function hasValidAncestry(node: FlatTreeNode<ItemType>): boolean {
+            if (!node.parentKey) return true;
+
+            const cached = validityCache.get(node.key);
+            if (cached !== undefined) return cached;
+
+            let currentParentKey: string | undefined = node.parentKey;
+            const visited = new Set<string>();
+
+            while (currentParentKey) {
+                if (visited.has(currentParentKey)) {
+                    validityCache.set(node.key, false);
+                    return false;
+                }
+                visited.add(currentParentKey);
+
+                const parent = keyToNode.get(currentParentKey);
+                if (!parent) {
+                    validityCache.set(node.key, false);
+                    return false;
+                }
+
+                if (!parent.parentKey) {
+                    validityCache.set(node.key, true);
+                    return true;
+                }
+
+                currentParentKey = parent.parentKey;
             }
 
-            const level = calculateLevelFromParent(flatNode, flatItems);
+            validityCache.set(node.key, true);
+            return true;
+        }
 
-            internal.push({
-                node: { item: flatNode.item, children: [] },
-                level,
-                index,
-                parentKey: flatNode.parentKey || null,
-                flatIndex: index,
-                originalKey: flatNode.key, // Store the original key for easy access
-            } satisfies InternalFlatItem<ItemType>);
+        // First pass: validate and group by parent
+        flatItems.forEach((flatNode) => {
+            let effectiveParentKey: string | null = flatNode.parentKey || null;
+
+            if (!hasValidAncestry(flatNode)) {
+                console.error(
+                    `ReorderableTree: invalid parent chain for item with key "${flatNode.key}". It will be rendered as a root item.`,
+                );
+                // Treat items with invalid ancestry as root-level items
+                effectiveParentKey = null;
+            }
+
+            if (!childrenByParent.has(effectiveParentKey)) {
+                childrenByParent.set(effectiveParentKey, []);
+            }
+            childrenByParent.get(effectiveParentKey)!.push(flatNode);
         });
+
+        // Second pass: depth-first traversal to build properly ordered internal items
+        let flatIndex = 0;
+        
+        function traverse(parentKey: string | null, level: number) {
+            const children = childrenByParent.get(parentKey) || [];
+            children.forEach((flatNode, index) => {
+                internal.push({
+                    node: { item: flatNode.item, children: [] },
+                    level,
+                    index,
+                    // Use the validated parentKey from the traversal context
+                    // so items with invalid ancestry are treated as root items.
+                    parentKey,
+                    flatIndex: flatIndex++,
+                    originalKey: flatNode.key,
+                } satisfies InternalFlatItem<ItemType>);
+                
+                // Recursively add this node's children immediately after it
+                traverse(flatNode.key, level + 1);
+            });
+        }
+
+        // Start traversal from root nodes (parentKey = null)
+        traverse(null, 0);
 
         return internal;
     }
@@ -369,22 +444,45 @@
         if (isAnimating || draggedId === target.nodeId) return;
 
         const currentFlatItems = internalItems;
-        const draggedIndex = currentFlatItems.findIndex(item => getItemKey(item.node.item) === draggedId);
-        const targetIndex = currentFlatItems.findIndex(item => getItemKey(item.node.item) === target.nodeId);
+        const { keyToIndex } = internalIndexMaps;
+
+        const draggedIndex = keyToIndex.get(draggedId) ?? -1;
+        const targetIndex = keyToIndex.get(target.nodeId) ?? -1;
         
         if (draggedIndex === -1 || targetIndex === -1) return;
 
         const draggedItem = currentFlatItems[draggedIndex];
         const targetItem = currentFlatItems[targetIndex];
         
-        // Remove dragged item and its children
-        const draggedWithChildren = currentFlatItems.filter(item => 
-            getItemKey(item.node.item) === draggedId || isDescendant(getItemKey(item.node.item), draggedId, currentFlatItems)
-        );
-        
-        const newFlatItems = currentFlatItems.filter(item => 
-            !draggedWithChildren.some(d => getItemKey(d.node.item) === getItemKey(item.node.item))
-        );
+        // Determine the contiguous range that represents the dragged item's subtree
+        const draggedSubtree: InternalFlatItem<ItemType>[] = [];
+        const newFlatItems: InternalFlatItem<ItemType>[] = [];
+
+        const baseLevel = draggedItem.level;
+
+        for (let i = 0; i < currentFlatItems.length; i++) {
+            if (i < draggedIndex) {
+                newFlatItems.push(currentFlatItems[i]);
+                continue;
+            }
+
+            if (i === draggedIndex) {
+                // Start of subtree
+                draggedSubtree.push(currentFlatItems[i]);
+
+                // Collect all descendants (contiguous items with greater level)
+                let j = i + 1;
+                while (j < currentFlatItems.length && currentFlatItems[j].level > baseLevel) {
+                    draggedSubtree.push(currentFlatItems[j]);
+                    j++;
+                }
+
+                // Skip over the subtree in the main array
+                i = j - 1;
+            } else {
+                newFlatItems.push(currentFlatItems[i]);
+            }
+        }
 
         // Calculate new position and level
         let insertIndex = newFlatItems.findIndex(item => getItemKey(item.node.item) === target.nodeId);
@@ -397,11 +495,15 @@
             newParentKey = targetItem.parentKey;
         } else if (target.position === 'below') {
             // Insert after target's entire subtree at same level as target
-            const targetKey = getItemKey(targetItem.node.item);
-            const targetWithChildren = newFlatItems.filter(item => 
-                getItemKey(item.node.item) === targetKey || isDescendant(getItemKey(item.node.item), targetKey, newFlatItems)
-            );
-            insertIndex = insertIndex + targetWithChildren.length;
+            const targetLevel = targetItem.level;
+            let lastSubtreeIndex = insertIndex;
+
+            for (let i = insertIndex + 1; i < newFlatItems.length; i++) {
+                if (newFlatItems[i].level <= targetLevel) break;
+                lastSubtreeIndex = i;
+            }
+
+            insertIndex = lastSubtreeIndex + 1;
             newLevel = targetItem.level;
             newParentKey = targetItem.parentKey;
         } else if (target.position === 'child') {
@@ -413,7 +515,7 @@
 
         // Update levels for all moved items
         const levelDiff = newLevel - draggedItem.level;
-        draggedWithChildren.forEach(item => {
+        draggedSubtree.forEach(item => {
             item.level += levelDiff;
             if (getItemKey(item.node.item) === draggedId) {
                 item.parentKey = newParentKey;
@@ -421,7 +523,7 @@
         });
 
         // Insert at new position
-        newFlatItems.splice(insertIndex, 0, ...draggedWithChildren);
+        newFlatItems.splice(insertIndex, 0, ...draggedSubtree);
 
         // Update the tree structure and trigger reactivity
         isAnimating = true;
@@ -429,17 +531,19 @@
         setTimeout(() => (isAnimating = false), animationDuration);
     }
 
-    function isDescendant(nodeKey: string, ancestorKey: string, searchFlatItems: InternalFlatItem<ItemType>[] = internalItems): boolean {
-        let currentKey: string | null = nodeKey;
+    function isDescendant(nodeKey: string, ancestorKey: string): boolean {
+        const { keyToParent } = internalIndexMaps;
+        let currentKey: string | null | undefined = nodeKey;
         const visited = new Set<string>();
-        
+
         while (currentKey && !visited.has(currentKey)) {
             visited.add(currentKey);
-            const item = searchFlatItems.find(item => getItemKey(item.node.item, item) === currentKey);
-            if (!item || !item.parentKey) return false;
-            if (item.parentKey === ancestorKey) return true;
-            currentKey = item.parentKey;
+            const parentKey = keyToParent.get(currentKey);
+            if (!parentKey) return false;
+            if (parentKey === ancestorKey) return true;
+            currentKey = parentKey;
         }
+
         return false;
     }
 
@@ -481,15 +585,17 @@
         } else if (event.key === "ArrowDown" && event.ctrlKey) {
             event.preventDefault();
             
-            // Get all items that are part of this subtree (including children)
-            const itemWithChildren = internalItems.filter(item => 
-                getItemKey(item.node.item) === itemKey || isDescendant(getItemKey(item.node.item), itemKey)
-            );
-            
+            // Determine the contiguous range that represents this item's subtree
+            const subtreeLevel = currentItem.level;
+            let afterSubtreeIndex = currentIndex + 1;
+
+            while (afterSubtreeIndex < internalItems.length && internalItems[afterSubtreeIndex].level > subtreeLevel) {
+                afterSubtreeIndex++;
+            }
+
             // Find the next sibling at the same level after this subtree
             let targetSiblingIndex = -1;
-            const afterSubtreeIndex = currentIndex + itemWithChildren.length;
-            
+
             // Look for the next item at the same level as the current item
             for (let i = afterSubtreeIndex; i < internalItems.length; i++) {
                 if (internalItems[i].level === currentItem.level) {
